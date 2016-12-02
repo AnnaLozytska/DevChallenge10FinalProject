@@ -1,5 +1,6 @@
 package devchallenge10.android.analogueclock;
 
+import android.animation.ValueAnimator;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -9,6 +10,7 @@ import android.graphics.drawable.Drawable;
 import android.os.CountDownTimer;
 import android.util.AttributeSet;
 import android.view.View;
+import android.view.animation.LinearInterpolator;
 
 import java.util.Calendar;
 import java.util.TimeZone;
@@ -24,6 +26,7 @@ public class AnalogClockView extends View implements SkinManager.OnSkinChangedLi
     private float hourPosition;
     private float minutePosition;
     private float secondPosition;
+    ValueAnimator secondsAnimator;
 
     private CountDownTimer secondsTimer = new CountDownTimer(TimeUnit.MINUTES.toMillis(1), TimeUnit.SECONDS.toMillis(1)) {
         @Override
@@ -66,6 +69,17 @@ public class AnalogClockView extends View implements SkinManager.OnSkinChangedLi
         super(context, attrs, defStyleAttr);
         skinManager = new SkinManager(context, getId());
         skinManager.addListener(this);
+
+        secondsAnimator = ValueAnimator.ofFloat(0f, 0f);
+        secondsAnimator.setInterpolator(new LinearInterpolator());
+        secondsAnimator.setDuration(1000);
+        secondsAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+            @Override public void onAnimationUpdate(ValueAnimator valueAnimator) {
+                secondPosition = (float) valueAnimator.getAnimatedValue();
+                invalidate();
+            }
+        });
+
         onTimeChanged();
         secondsTimer.start();
     }
@@ -198,7 +212,15 @@ public class AnalogClockView extends View implements SkinManager.OnSkinChangedLi
         int second = currentTime.get(Calendar.SECOND);
         hourPosition = hour + minutePosition / 60.0f;
         minutePosition = minute + second / 60.0f;
+        float previousSecondsPosition = secondPosition;
         secondPosition = (float) second;
+        secondsAnimator.cancel();
+        if (previousSecondsPosition < secondPosition) {
+            secondsAnimator.setFloatValues(previousSecondsPosition, secondPosition);
+            secondsAnimator.start();
+        }
+        invalidate();
+
     }
 
     public SkinManager getSkinManager() {
