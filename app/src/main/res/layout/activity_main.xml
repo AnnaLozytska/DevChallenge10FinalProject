@@ -11,12 +11,32 @@
     android:paddingTop="@dimen/activity_vertical_margin"
     tools:context="devchallenge10.android.analogueclock.MainActivity">
 
+    <devchallenge10.android.analogueclock.AnalogClockView
+        android:id="@+id/clockView"
+        android:layout_width="match_parent"
+        android:layout_height="150dp" />
+
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Hello World!" />
+        android:layout_marginBottom="8dp"
+        android:text="Available clock faces:" />
 
-    <devchallenge10.android.analogueclock.AnalogClockView
+    <LinearLayout
+        android:id="@+id/faceSkinsContainer"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_height="120dp"
+        android:orientation="horizontal" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="8dp"
+        android:text="Available clock hour hands:" />
+
+    <LinearLayout
+        android:id="@+id/handSkinsContainer"
+        android:layout_width="match_parent"
+        android:layout_height="120dp"
+        android:orientation="horizontal" />
 </LinearLayout>

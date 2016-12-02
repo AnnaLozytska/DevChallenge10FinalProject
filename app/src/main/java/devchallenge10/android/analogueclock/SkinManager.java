@@ -11,7 +11,7 @@ public class SkinManager {
 
     private final Context context;
     private final Resources resources;
-    private final SettingsManager mSettingsManager;
+    private final SettingsManager msettingsManager;
     private final List<OnSkinChangedListener> listeners;
     private int clockId;
     private Drawable face;
@@ -29,7 +29,8 @@ public class SkinManager {
     public SkinManager(Context context, int clockId) {
         this.context = context;
         resources = context.getResources();
-        mSettingsManager = SettingsManager.getInstance(context);
+        //TODO: save skin state here:
+        msettingsManager = SettingsManager.getInstance(context);
         listeners = new ArrayList<>(8);
         this.clockId = clockId;
         setSkin(clockId);
@@ -48,32 +49,42 @@ public class SkinManager {
         return face;
     }
 
-    public void setFace(Drawable face) {
-        this.face = face;
+    public void setFace(int faceResId) {
+        this.face = resources.getDrawable(faceResId, null);
+        notifySkinChanged();
     }
 
     public Drawable getHourHand() {
         return hourHand;
     }
 
-    public void setHourHand(Drawable hourHand) {
-        this.hourHand = hourHand;
+    public void setHourHand(int hourHandResId) {
+        this.hourHand = resources.getDrawable(hourHandResId, null);
+        notifySkinChanged();
     }
 
     public Drawable getMinuteHand() {
         return minuteHand;
     }
 
-    public void setMinuteHand(Drawable minuteHand) {
-        this.minuteHand = minuteHand;
+    public void setMinuteHand(int minuteHandResId) {
+        this.minuteHand = resources.getDrawable(minuteHandResId, null);
+        notifySkinChanged();
     }
 
     public Drawable getSecondHand() {
         return secondHand;
     }
 
-    public void setSecondHand(Drawable secondHand) {
-        this.secondHand = secondHand;
+    public void setSecondHand(int secondHandResId) {
+        this.secondHand = resources.getDrawable(secondHandResId, null);
+        notifySkinChanged();
+    }
+
+    private void notifySkinChanged() {
+        for (OnSkinChangedListener listener : listeners) {
+            listener.onSkinChanged();
+        }
     }
 
     public void addListener(OnSkinChangedListener listener) {

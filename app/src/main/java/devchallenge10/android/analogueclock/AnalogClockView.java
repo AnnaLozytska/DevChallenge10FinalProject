@@ -21,9 +21,6 @@ public class AnalogClockView extends View implements SkinManager.OnSkinChangedLi
     private boolean isAttached;
     private boolean isChanged;
 
-    private int faceWidth;
-    private int faceHeight;
-
     private float hourPosition;
     private float minutePosition;
     private float secondPosition;
@@ -69,8 +66,6 @@ public class AnalogClockView extends View implements SkinManager.OnSkinChangedLi
         super(context, attrs, defStyleAttr);
         skinManager = new SkinManager(context, getId());
         skinManager.addListener(this);
-        faceWidth = skinManager.getFace().getIntrinsicWidth();
-        faceHeight = skinManager.getFace().getIntrinsicHeight();
         onTimeChanged();
         secondsTimer.start();
     }
@@ -105,6 +100,8 @@ public class AnalogClockView extends View implements SkinManager.OnSkinChangedLi
         int widthSize =  MeasureSpec.getSize(widthMeasureSpec);
         int heightMode = MeasureSpec.getMode(heightMeasureSpec);
         int heightSize =  MeasureSpec.getSize(heightMeasureSpec);
+        int faceWidth = skinManager.getFace().getIntrinsicWidth();
+        int faceHeight = skinManager.getFace().getIntrinsicHeight();
         float hScale = 1.0f;
         float vScale = 1.0f;
         if (widthMode != MeasureSpec.UNSPECIFIED && widthSize < faceWidth) {
@@ -135,16 +132,16 @@ public class AnalogClockView extends View implements SkinManager.OnSkinChangedLi
         int centreX = availableWidth / 2;
         int centreY = availableHeight / 2;
 
-        final Drawable dial = skinManager.getFace();
-        int faceWidth = dial.getIntrinsicWidth();
-        int faceHeight = dial.getIntrinsicHeight();
+        final Drawable face = skinManager.getFace();
+        int faceWidth = face.getIntrinsicWidth();
+        int faceHeight = face.getIntrinsicHeight();
         int saveCount;
 
         scaleIfNeeded(canvas, availableWidth, availableHeight, centreX, centreY, faceWidth, faceHeight);
         if (changed) {
-            dial.setBounds(centreX - (faceWidth / 2), centreY - (faceHeight / 2), centreX + (faceWidth / 2), centreY + (faceHeight / 2));
+            face.setBounds(centreX - (faceWidth / 2), centreY - (faceHeight / 2), centreX + (faceWidth / 2), centreY + (faceHeight / 2));
         }
-        dial.draw(canvas);
+        face.draw(canvas);
         saveCount = canvas.save();
         canvas.restoreToCount(saveCount);
 
@@ -190,6 +187,7 @@ public class AnalogClockView extends View implements SkinManager.OnSkinChangedLi
 
     @Override
     public void onSkinChanged() {
+        isChanged = true;
         invalidate();
     }
 
