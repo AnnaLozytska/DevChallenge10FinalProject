@@ -18,15 +18,15 @@ public class AnalogClockView extends View implements SkinManager.OnSkinChangedLi
 
     private SkinManager skinManager;
 
-    private boolean mAttached;
-    private boolean mChanged;
+    private boolean isAttached;
+    private boolean isChanged;
 
-    private int mDialWidth;
-    private int mDialHeight;
+    private int faceWidth;
+    private int faceHeight;
 
-    private float mHour; // hourPosition
-    private float mMinutes; // minutePosition
-    private float secondPosition; // minutePosition
+    private float hourPosition;
+    private float minutePosition;
+    private float secondPosition;
 
     private CountDownTimer secondsTimer = new CountDownTimer(TimeUnit.MINUTES.toMillis(1), TimeUnit.SECONDS.toMillis(1)) {
         @Override
@@ -41,14 +41,14 @@ public class AnalogClockView extends View implements SkinManager.OnSkinChangedLi
         }
     };
 
-    private Calendar mCalendar;
+    private Calendar currentTime;
 
     private final BroadcastReceiver mIntentReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
             if (intent.getAction().equals(Intent.ACTION_TIMEZONE_CHANGED)) {
                 String tz = intent.getStringExtra("time-zone");
-                mCalendar = Calendar.getInstance(TimeZone.getTimeZone(tz));
+                currentTime = Calendar.getInstance(TimeZone.getTimeZone(tz));
             }
             onTimeChanged();
             secondsTimer.cancel();
@@ -69,8 +69,8 @@ public class AnalogClockView extends View implements SkinManager.OnSkinChangedLi
         super(context, attrs, defStyleAttr);
         skinManager = new SkinManager(context, getId());
         skinManager.addListener(this);
-        mDialWidth = skinManager.getFace().getIntrinsicWidth();
-        mDialHeight = skinManager.getFace().getIntrinsicHeight();
+        faceWidth = skinManager.getFace().getIntrinsicWidth();
+        faceHeight = skinManager.getFace().getIntrinsicHeight();
         onTimeChanged();
         secondsTimer.start();
     }
@@ -79,8 +79,8 @@ public class AnalogClockView extends View implements SkinManager.OnSkinChangedLi
     protected void onAttachedToWindow() {
         super.onAttachedToWindow();
 
-        if (!mAttached) {
-            mAttached = true;
+        if (!isAttached) {
+            isAttached = true;
             IntentFilter filter = new IntentFilter();
             filter.addAction(Intent.ACTION_TIME_TICK);
             filter.addAction(Intent.ACTION_TIME_CHANGED);
@@ -93,9 +93,9 @@ public class AnalogClockView extends View implements SkinManager.OnSkinChangedLi
     @Override
     protected void onDetachedFromWindow() {
         super.onDetachedFromWindow();
-        if (mAttached) {
+        if (isAttached) {
             getContext().unregisterReceiver(mIntentReceiver);
-            mAttached = false;
+            isAttached = false;
         }
     }
 
@@ -107,28 +107,28 @@ public class AnalogClockView extends View implements SkinManager.OnSkinChangedLi
         int heightSize =  MeasureSpec.getSize(heightMeasureSpec);
         float hScale = 1.0f;
         float vScale = 1.0f;
-        if (widthMode != MeasureSpec.UNSPECIFIED && widthSize < mDialWidth) {
-            hScale = (float) widthSize / (float) mDialWidth;
+        if (widthMode != MeasureSpec.UNSPECIFIED && widthSize < faceWidth) {
+            hScale = (float) widthSize / (float) faceWidth;
         }
-        if (heightMode != MeasureSpec.UNSPECIFIED && heightSize < mDialHeight) {
-            vScale = (float )heightSize / (float) mDialHeight;
+        if (heightMode != MeasureSpec.UNSPECIFIED && heightSize < faceHeight) {
+            vScale = (float )heightSize / (float) faceHeight;
         }
         float scale = Math.min(hScale, vScale);
-        setMeasuredDimension(resolveSizeAndState((int) (mDialWidth * scale), widthMeasureSpec, 0),
-                resolveSizeAndState((int) (mDialHeight * scale), heightMeasureSpec, 0));
+        setMeasuredDimension(resolveSizeAndState((int) (faceWidth * scale), widthMeasureSpec, 0),
+                resolveSizeAndState((int) (faceHeight * scale), heightMeasureSpec, 0));
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
     }
     @Override
     protected void onSizeChanged(int w, int h, int oldw, int oldh) {
         super.onSizeChanged(w, h, oldw, oldh);
-        mChanged = true;
+        isChanged = true;
     }
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
-        boolean changed = mChanged;
+        boolean changed = isChanged;
         if (changed) {
-            mChanged = false;
+            isChanged = false;
         }
         int availableWidth = getMeasuredWidth();
         int availableHeight = getMeasuredHeight();
@@ -139,9 +139,8 @@ public class AnalogClockView extends View implements SkinManager.OnSkinChangedLi
         int faceWidth = dial.getIntrinsicWidth();
         int faceHeight = dial.getIntrinsicHeight();
         int saveCount;
-        boolean scaled;
 
-        scaled = scaleIfNeeded(canvas, availableWidth, availableHeight, centreX, centreY, faceWidth, faceHeight);
+        scaleIfNeeded(canvas, availableWidth, availableHeight, centreX, centreY, faceWidth, faceHeight);
         if (changed) {
             dial.setBounds(centreX - (faceWidth / 2), centreY - (faceHeight / 2), centreX + (faceWidth / 2), centreY + (faceHeight / 2));
         }
@@ -152,18 +151,18 @@ public class AnalogClockView extends View implements SkinManager.OnSkinChangedLi
         final Drawable hourHand = skinManager.getHourHand();
         int elementWidth = hourHand.getIntrinsicWidth();
         int elementHeight = hourHand.getIntrinsicHeight();
-        scaled = scaleIfNeeded(canvas, faceWidth / 3, faceHeight / 3, centreX, centreY, elementWidth, elementHeight);
+        scaleIfNeeded(canvas, faceWidth / 3, faceHeight / 3, centreX, centreY, elementWidth, elementHeight);
         hourHand.setBounds(centreX - (elementWidth / 2), centreY - elementHeight, centreX + (elementWidth / 2), centreY);
-        canvas.rotate(mHour / 12.0f * 360.0f, centreX, centreY);
+        canvas.rotate(hourPosition / 12.0f * 360.0f, centreX, centreY);
         hourHand.draw(canvas);
         canvas.restoreToCount(saveCount);
 
         final Drawable minuteHand = skinManager.getMinuteHand();
         elementWidth = minuteHand.getIntrinsicWidth();
         elementHeight = minuteHand.getIntrinsicHeight();
-        scaled = scaleIfNeeded(canvas, faceWidth / 3, faceHeight / 3, centreX, centreY, elementWidth, elementHeight);
+        scaleIfNeeded(canvas, faceWidth / 3, faceHeight / 3, centreX, centreY, elementWidth, elementHeight);
         minuteHand.setBounds(centreX - (elementWidth / 2), centreY - elementHeight, centreX + (elementWidth / 2), centreY);
-        canvas.rotate(mMinutes / 60.0f * 360.0f, centreX, centreY);
+        canvas.rotate(minutePosition / 60.0f * 360.0f, centreX, centreY);
         minuteHand.draw(canvas);
         canvas.restoreToCount(saveCount);
 
@@ -195,13 +194,16 @@ public class AnalogClockView extends View implements SkinManager.OnSkinChangedLi
     }
 
     private void onTimeChanged() {
-        mCalendar = Calendar.getInstance();
-        int hour = mCalendar.get(Calendar.HOUR);
-        int minute = mCalendar.get(Calendar.MINUTE);
-        int second = mCalendar.get(Calendar.SECOND);
-        mHour = hour + mMinutes / 60.0f;
-        mMinutes = minute + second / 60.0f;
+        currentTime = Calendar.getInstance();
+        int hour = currentTime.get(Calendar.HOUR);
+        int minute = currentTime.get(Calendar.MINUTE);
+        int second = currentTime.get(Calendar.SECOND);
+        hourPosition = hour + minutePosition / 60.0f;
+        minutePosition = minute + second / 60.0f;
         secondPosition = (float) second;
-        mChanged = true;
+    }
+
+    public SkinManager getSkinManager() {
+        return skinManager;
     }
 }
