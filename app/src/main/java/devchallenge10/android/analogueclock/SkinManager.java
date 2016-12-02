@@ -10,7 +10,7 @@ import java.util.List;
 public class SkinManager {
 
     private final Context context;
-    private final Resources mResources;
+    private final Resources resources;
     private final SettingsManager mSettingsManager;
     private final List<OnSkinChangedListener> listeners;
     private int clockId;
@@ -19,10 +19,16 @@ public class SkinManager {
     private Drawable minuteHand;
     private Drawable secondHand;
 
+    int[] faceSkins = new int[]{R.drawable.clock_face_default,
+            R.drawable.clock_face_lathin,
+            R.drawable.clock_face_chineese};
+
+    int[] handHourSkins = new int[]{R.drawable.hand_hour_default,
+            R.drawable.hand_hour_pink};
 
     public SkinManager(Context context, int clockId) {
         this.context = context;
-        mResources = context.getResources();
+        resources = context.getResources();
         mSettingsManager = SettingsManager.getInstance(context);
         listeners = new ArrayList<>(8);
         this.clockId = clockId;
@@ -32,10 +38,10 @@ public class SkinManager {
     private void setSkin(int clockId) {
         // I would have been so happy to find more beautiful default skins,
         // but bad-bad-bad internet connection ruined my dreams :(
-        face = context.getDrawable(R.drawable.clock_face);
-        hourHand = context.getDrawable(R.drawable.hand_hour);
-        minuteHand = context.getDrawable(R.drawable.hand_minute);
-        secondHand = context.getDrawable(R.drawable.hand_second);
+        face = context.getDrawable(R.drawable.clock_face_default);
+        hourHand = context.getDrawable(R.drawable.hand_hour_default);
+        minuteHand = context.getDrawable(R.drawable.hand_minute_default);
+        secondHand = context.getDrawable(R.drawable.hand_second_default);
     }
 
     public Drawable getFace() {
@@ -76,6 +82,14 @@ public class SkinManager {
 
     public void removeListener(OnSkinChangedListener listener) {
         listeners.remove(listener);
+    }
+
+    public int[] getFaceSkins() {
+        return faceSkins;
+    }
+
+    public int[] getHandSkins() {
+        return handHourSkins;
     }
 
     public interface OnSkinChangedListener {
