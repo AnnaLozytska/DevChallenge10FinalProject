@@ -30,6 +30,8 @@ public class SkinManager {
     }
 
     private void setSkin(int clockId) {
+        // I would have been so happy to find more beautiful default skins,
+        // but bad-bad-bad internet connection ruined my dreams :(
         face = context.getDrawable(R.drawable.clock_face);
         hourHand = context.getDrawable(R.drawable.hand_hour);
         minuteHand = context.getDrawable(R.drawable.hand_minute);

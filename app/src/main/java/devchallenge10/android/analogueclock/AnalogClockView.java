@@ -6,11 +6,13 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.graphics.Canvas;
 import android.graphics.drawable.Drawable;
+import android.os.CountDownTimer;
 import android.util.AttributeSet;
 import android.view.View;
 
 import java.util.Calendar;
 import java.util.TimeZone;
+import java.util.concurrent.TimeUnit;
 
 public class AnalogClockView extends View implements SkinManager.OnSkinChangedListener {
 
@@ -26,6 +28,19 @@ public class AnalogClockView extends View implements SkinManager.OnSkinChangedLi
     private float mMinutes; // minutePosition
     private float secondPosition; // minutePosition
 
+    private CountDownTimer secondsTimer = new CountDownTimer(TimeUnit.MINUTES.toMillis(1), TimeUnit.SECONDS.toMillis(1)) {
+        @Override
+        public void onTick(long l) {
+            onTimeChanged();
+            invalidate();
+        }
+
+        @Override
+        public void onFinish() {
+
+        }
+    };
+
     private Calendar mCalendar;
 
     private final BroadcastReceiver mIntentReceiver = new BroadcastReceiver() {
@@ -36,7 +51,8 @@ public class AnalogClockView extends View implements SkinManager.OnSkinChangedLi
                 mCalendar = Calendar.getInstance(TimeZone.getTimeZone(tz));
             }
             onTimeChanged();
-
+            secondsTimer.cancel();
+            secondsTimer.start();
             invalidate();
         }
     };
@@ -53,9 +69,10 @@ public class AnalogClockView extends View implements SkinManager.OnSkinChangedLi
         super(context, attrs, defStyleAttr);
         skinManager = new SkinManager(context, getId());
         skinManager.addListener(this);
-        mCalendar = Calendar.getInstance();
         mDialWidth = skinManager.getFace().getIntrinsicWidth();
         mDialHeight = skinManager.getFace().getIntrinsicHeight();
+        onTimeChanged();
+        secondsTimer.start();
     }
 
     @Override
@@ -121,57 +138,55 @@ public class AnalogClockView extends View implements SkinManager.OnSkinChangedLi
         final Drawable dial = skinManager.getFace();
         int faceWidth = dial.getIntrinsicWidth();
         int faceHeight = dial.getIntrinsicHeight();
-        boolean scaled = false;
-        if (availableWidth < faceWidth || availableHeight < faceHeight) {
-            scaled = true;
-            float scale = Math.min((float) availableWidth / (float) faceWidth,
-                    (float) availableHeight / (float) faceHeight);
-            canvas.save();
-            canvas.scale(scale, scale, centreX, centreY);
-        }
+        int saveCount;
+        boolean scaled;
+
+        scaled = scaleIfNeeded(canvas, availableWidth, availableHeight, centreX, centreY, faceWidth, faceHeight);
         if (changed) {
             dial.setBounds(centreX - (faceWidth / 2), centreY - (faceHeight / 2), centreX + (faceWidth / 2), centreY + (faceHeight / 2));
         }
         dial.draw(canvas);
-        canvas.save();
+        saveCount = canvas.save();
+        canvas.restoreToCount(saveCount);
 
-        canvas.rotate(mHour / 12.0f * 360.0f, centreX, centreY);
         final Drawable hourHand = skinManager.getHourHand();
-        if (changed) {
-            faceWidth = hourHand.getIntrinsicWidth();
-            faceHeight = hourHand.getIntrinsicHeight();
-            hourHand.setBounds(centreX - (faceWidth / 2), centreY - faceHeight, centreX + faceWidth, centreY + faceHeight);
-        }
+        int elementWidth = hourHand.getIntrinsicWidth();
+        int elementHeight = hourHand.getIntrinsicHeight();
+        scaled = scaleIfNeeded(canvas, faceWidth / 3, faceHeight / 3, centreX, centreY, elementWidth, elementHeight);
+        hourHand.setBounds(centreX - (elementWidth / 2), centreY - elementHeight, centreX + (elementWidth / 2), centreY);
+        canvas.rotate(mHour / 12.0f * 360.0f, centreX, centreY);
         hourHand.draw(canvas);
-        canvas.save();
-        canvas.restore();
+        canvas.restoreToCount(saveCount);
 
-        canvas.rotate(mMinutes / 60.0f * 360.0f, centreX, centreY);
         final Drawable minuteHand = skinManager.getMinuteHand();
-        if (changed) {
-            faceWidth = minuteHand.getIntrinsicWidth();
-            faceHeight = minuteHand.getIntrinsicHeight();
-            minuteHand.setBounds(centreX - (faceWidth / 2), centreY - (faceHeight / 2), centreX + (faceWidth / 2), centreY + (faceHeight / 2));
-        }
+        elementWidth = minuteHand.getIntrinsicWidth();
+        elementHeight = minuteHand.getIntrinsicHeight();
+        scaled = scaleIfNeeded(canvas, faceWidth / 3, faceHeight / 3, centreX, centreY, elementWidth, elementHeight);
+        minuteHand.setBounds(centreX - (elementWidth / 2), centreY - elementHeight, centreX + (elementWidth / 2), centreY);
+        canvas.rotate(mMinutes / 60.0f * 360.0f, centreX, centreY);
         minuteHand.draw(canvas);
-        canvas.save();
-        canvas.restore();
+        canvas.restoreToCount(saveCount);
 
-        canvas.rotate(secondPosition / 60.0f * 360.0f, centreX, centreY);
         final Drawable secondHand = skinManager.getSecondHand();
-        if (changed) {
-            faceWidth = secondHand.getIntrinsicWidth();
-            faceHeight = secondHand.getIntrinsicHeight();
-            secondHand.setBounds(centreX - (faceWidth / 2), centreY - (faceHeight / 2), centreX + (faceWidth / 2), centreY + (faceHeight / 2));
-        }
+        elementWidth = secondHand.getIntrinsicWidth();
+        elementHeight = secondHand.getIntrinsicHeight();
+        scaleIfNeeded(canvas, faceWidth / 3, faceHeight / 3, centreX, centreY, elementWidth, elementHeight);
+        secondHand.setBounds(centreX - (elementWidth / 2), centreY - elementHeight, centreX + (elementWidth / 2), centreY);
+        canvas.rotate(secondPosition / 60.0f * 360.0f, centreX, centreY);
         secondHand.draw(canvas);
-        canvas.save();
-        canvas.restore();
+        canvas.restoreToCount(saveCount);
+    }
 
-        if (scaled) {
+    private boolean scaleIfNeeded(Canvas canvas, int availableWidth, int availableHeight,
+                                  int centreX, int centreY, int elementWidth, int elementHeight) {
+        if (availableWidth < elementWidth || availableHeight < elementHeight) {
+            float scale = Math.min((float) availableWidth / (float) elementWidth,
+                    (float) availableHeight / (float) elementHeight);
             canvas.save();
-            canvas.restore();
+            canvas.scale(scale, scale, centreX, centreY);
+            return true;
         }
+        return false;
     }
 
     @Override
