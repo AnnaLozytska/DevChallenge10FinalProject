@@ -44,4 +44,5 @@ public class SettingsManager {
     private String getKey(@StringRes int resId) {
         return mResources.getString(resId);
     }
+
 }
